@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  webbug-hunter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: webbug_hunter_app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///./webbug_hunter.db
+      - ENVIRONMENT=production
+    volumes:
+      - data-volume:/app/data
+    restart: unless-stopped
+
+volumes:
+  data-volume:

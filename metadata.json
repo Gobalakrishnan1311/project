@@ -1,0 +1,6 @@
+{
+  "name": "WebBug Hunter",
+  "description": "Authorized website security testing tool, reconnaissance engine, and vulnerability audit dashboard with strict scope guard controls.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
