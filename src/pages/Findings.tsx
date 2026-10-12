@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Finding, Severity, FindingStatus } from '../types.ts';
 import { Search, Filter, Trash2, Edit3, ShieldAlert, CheckCircle2, ChevronRight, X, ExternalLink } from 'lucide-react';
+import { getSeverityStyle } from '../utils/severity.ts';
 
 interface FindingsProps {
   findings: Finding[];
@@ -11,7 +12,7 @@ interface FindingsProps {
 }
 
 export const Findings: React.FC<FindingsProps> = ({
-  findings,
+  findings = [],
   onUpdateFinding,
   onDeleteFinding,
   selectedFinding,
@@ -24,22 +25,17 @@ export const Findings: React.FC<FindingsProps> = ({
   const [notes, setNotes] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const severityBadges: Record<Severity, { bg: string; text: string; border: string }> = {
-    critical: { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
-    high: { bg: 'bg-amber-500/10', text: 'text-amber-400', border: 'border-amber-500/20' },
-    medium: { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/20' },
-    low: { bg: 'bg-cyan-500/10', text: 'text-cyan-400', border: 'border-cyan-500/20' },
-    informational: { bg: 'bg-slate-500/10', text: 'text-slate-400', border: 'border-slate-500/20' }
-  };
+  const safeFindings = Array.isArray(findings) ? findings : [];
 
-  const filteredFindings = findings.filter(f => {
-    const matchesSearch =
-      f.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      f.affected_url.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredFindings = safeFindings.filter(f => {
+    const title = (f?.title || '').toLowerCase();
+    const category = (f?.category || '').toLowerCase();
+    const affectedUrl = (f?.affected_url || '').toLowerCase();
+    const query = searchQuery.toLowerCase();
 
-    const matchesSeverity = severityFilter === 'all' || f.severity === severityFilter;
-    const matchesStatus = statusFilter === 'all' || f.verification_status === statusFilter;
+    const matchesSearch = title.includes(query) || category.includes(query) || affectedUrl.includes(query);
+    const matchesSeverity = severityFilter === 'all' || (f?.severity || '').toLowerCase() === severityFilter.toLowerCase();
+    const matchesStatus = statusFilter === 'all' || f?.verification_status === statusFilter;
 
     return matchesSearch && matchesSeverity && matchesStatus;
   });
@@ -157,7 +153,7 @@ export const Findings: React.FC<FindingsProps> = ({
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {filteredFindings.map((finding) => {
-                  const badge = severityBadges[finding.severity];
+                  const badge = getSeverityStyle(finding?.severity);
                   return (
                     <tr
                       key={finding.id}
@@ -166,7 +162,7 @@ export const Findings: React.FC<FindingsProps> = ({
                     >
                       <td className="py-3 px-4">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold tracking-wider ${badge.bg} ${badge.text} border ${badge.border}`}>
-                          {finding.severity}
+                          {finding.severity || 'info'}
                         </span>
                       </td>
 
@@ -212,11 +208,16 @@ export const Findings: React.FC<FindingsProps> = ({
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold tracking-wider ${severityBadges[selectedFinding.severity].bg} ${severityBadges[selectedFinding.severity].text} border ${severityBadges[selectedFinding.severity].border}`}>
-                  {selectedFinding.severity}
-                </span>
+                {(() => {
+                  const modalBadge = getSeverityStyle(selectedFinding.severity);
+                  return (
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase font-bold tracking-wider ${modalBadge.bg} ${modalBadge.text} border ${modalBadge.border}`}>
+                      {selectedFinding.severity || 'info'}
+                    </span>
+                  );
+                })()}
                 <h3 className="text-sm font-semibold text-white tracking-tight">
-                  {selectedFinding.title}
+                  {selectedFinding.title || 'Untitled'}
                 </h3>
               </div>
               <button

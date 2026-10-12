@@ -8,8 +8,9 @@ interface ReconProps {
   defaultHost?: string;
 }
 
-export const Reconnaissance: React.FC<ReconProps> = ({ targets, defaultHost = '' }) => {
-  const [targetInput, setTargetInput] = useState(defaultHost || (targets[0]?.url || 'https://example.com'));
+export const Reconnaissance: React.FC<ReconProps> = ({ targets = [], defaultHost = '' }) => {
+  const safeTargets = Array.isArray(targets) ? targets : [];
+  const [targetInput, setTargetInput] = useState(defaultHost || (safeTargets[0]?.url || 'https://example.com'));
   const [activeTab, setActiveTab] = useState<'dns' | 'http' | 'files'>('dns');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);

@@ -7,11 +7,14 @@ interface ReportsProps {
   findings: Finding[];
 }
 
-export const Reports: React.FC<ReportsProps> = ({ scans, findings }) => {
-  const [selectedScanId, setSelectedScanId] = useState<string>(scans[0]?.id || '');
+export const Reports: React.FC<ReportsProps> = ({ scans = [], findings = [] }) => {
+  const safeScans = Array.isArray(scans) ? scans : [];
+  const safeFindings = Array.isArray(findings) ? findings : [];
 
-  const activeScan = scans.find(s => s.id === selectedScanId);
-  const scanFindings = findings.filter(f => f.scan_id === selectedScanId);
+  const [selectedScanId, setSelectedScanId] = useState<string>(safeScans[0]?.id || '');
+
+  const activeScan = safeScans.find(s => s.id === selectedScanId);
+  const scanFindings = safeFindings.filter(f => f.scan_id === selectedScanId);
 
   const downloadReport = (format: 'html' | 'json' | 'csv') => {
     if (!selectedScanId) return;
@@ -39,12 +42,12 @@ export const Reports: React.FC<ReportsProps> = ({ scans, findings }) => {
             onChange={(e) => setSelectedScanId(e.target.value)}
             className="w-full sm:w-auto min-w-[280px] px-3 py-1.5 bg-slate-950 border border-slate-800 rounded text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
           >
-            {scans.length === 0 ? (
+            {safeScans.length === 0 ? (
               <option value="">No scans available</option>
             ) : (
-              scans.map((s) => (
+              safeScans.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.target_hostname} — {new Date(s.started_at).toLocaleString()} ({s.findings_count} findings)
+                  {s.target_hostname || 'Target'} — {s.started_at ? new Date(s.started_at).toLocaleString() : 'Recent'} ({s.findings_count || 0} findings)
                 </option>
               ))
             )}
@@ -134,7 +137,7 @@ export const Reports: React.FC<ReportsProps> = ({ scans, findings }) => {
               </div>
               <div className="p-3 rounded bg-slate-950 border border-slate-850">
                 <span className="text-slate-500 text-[11px] block">Audit Execution Date</span>
-                <span className="text-slate-200">{new Date(activeScan.started_at).toLocaleDateString()}</span>
+                <span className="text-slate-200">{activeScan.started_at ? new Date(activeScan.started_at).toLocaleDateString() : 'Recent'}</span>
               </div>
               <div className="p-3 rounded bg-slate-950 border border-slate-850">
                 <span className="text-slate-500 text-[11px] block">Checks Performed</span>

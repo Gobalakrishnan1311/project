@@ -43,14 +43,14 @@ export const History: React.FC<HistoryProps> = ({ scans, onSelectScan, onNavigat
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {scans.map((scan) => (
+                {(Array.isArray(scans) ? scans : []).map((scan) => (
                   <tr key={scan.id} className="hover:bg-slate-850/40 transition-colors">
                     <td className="py-3 px-4">
                       <div className="font-mono font-medium text-slate-200">
-                        {scan.target_hostname}
+                        {scan.target_hostname || 'Target'}
                       </div>
                       <div className="text-[11px] text-slate-500 truncate max-w-xs">
-                        {scan.target_url}
+                        {scan.target_url || ''}
                       </div>
                     </td>
 
@@ -64,12 +64,12 @@ export const History: React.FC<HistoryProps> = ({ scans, onSelectScan, onNavigat
                           ? 'bg-slate-800 text-slate-400'
                           : 'bg-red-500/10 text-red-400'
                       }`}>
-                        {scan.status}
+                        {scan.status || 'pending'}
                       </span>
                     </td>
 
                     <td className="py-3 px-4 font-mono text-[11px] text-slate-400">
-                      {new Date(scan.started_at).toLocaleString()}
+                      {scan.started_at ? new Date(scan.started_at).toLocaleString() : 'Recent'}
                     </td>
 
                     <td className="py-3 px-4 font-mono text-[11px] text-slate-400">

@@ -23,12 +23,13 @@ interface ScannerProps {
 }
 
 export const Scanner: React.FC<ScannerProps> = ({
-  targets,
+  targets = [],
   selectedTargetId = '',
   onNavigateFindings,
   onSelectFinding
 }) => {
-  const [currentTargetId, setCurrentTargetId] = useState(selectedTargetId || (targets[0]?.id || ''));
+  const safeTargets = Array.isArray(targets) ? targets : [];
+  const [currentTargetId, setCurrentTargetId] = useState(selectedTargetId || (safeTargets[0]?.id || ''));
   const [activeScan, setActiveScan] = useState<Scan | null>(null);
   const [scanLogs, setScanLogs] = useState<any[]>([]);
   const [scanFindings, setScanFindings] = useState<Finding[]>([]);
@@ -45,10 +46,10 @@ export const Scanner: React.FC<ScannerProps> = ({
   useEffect(() => {
     if (selectedTargetId) {
       setCurrentTargetId(selectedTargetId);
-    } else if (!currentTargetId && targets.length > 0) {
-      setCurrentTargetId(targets[0].id);
+    } else if (!currentTargetId && safeTargets.length > 0) {
+      setCurrentTargetId(safeTargets[0].id);
     }
-  }, [selectedTargetId, targets]);
+  }, [selectedTargetId, safeTargets]);
 
   // Polling active scan status
   useEffect(() => {
@@ -175,9 +176,9 @@ export const Scanner: React.FC<ScannerProps> = ({
               disabled={isScanning}
               className="w-full px-3 py-1.5 bg-slate-950 border border-slate-800 rounded text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
             >
-              {targets.map((t) => (
+              {safeTargets.map((t) => (
                 <option key={t.id} value={t.id}>
-                  {t.hostname} ({t.scheme})
+                  {t.hostname || 'Target'} ({t.scheme || 'https'})
                 </option>
               ))}
             </select>
@@ -394,25 +395,25 @@ export const Scanner: React.FC<ScannerProps> = ({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {scanFindings.map((finding) => (
+            {(Array.isArray(scanFindings) ? scanFindings : []).map((finding) => (
               <div
-                key={finding.id}
+                key={finding.id || Math.random().toString()}
                 onClick={() => onSelectFinding(finding)}
                 className="p-3 rounded bg-slate-950 border border-slate-800 hover:border-slate-700 cursor-pointer transition-colors text-xs space-y-1.5"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-mono uppercase font-bold text-amber-400">
-                    {finding.severity}
+                    {finding.severity || 'info'}
                   </span>
                   <span className="text-[10px] text-slate-500 font-mono">
-                    {finding.verification_status}
+                    {finding.verification_status || 'New'}
                   </span>
                 </div>
                 <div className="text-slate-200 font-medium line-clamp-1">
-                  {finding.title}
+                  {finding.title || 'Finding'}
                 </div>
                 <div className="text-[11px] text-slate-500 line-clamp-2">
-                  {finding.description}
+                  {finding.description || ''}
                 </div>
               </div>
             ))}

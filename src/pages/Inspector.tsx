@@ -7,8 +7,9 @@ interface InspectorProps {
   targets: Target[];
 }
 
-export const Inspector: React.FC<InspectorProps> = ({ targets }) => {
-  const [urlInput, setUrlInput] = useState(targets[0]?.url || 'https://example.com');
+export const Inspector: React.FC<InspectorProps> = ({ targets = [] }) => {
+  const safeTargets = Array.isArray(targets) ? targets : [];
+  const [urlInput, setUrlInput] = useState(safeTargets[0]?.url || 'https://example.com');
   const [method, setMethod] = useState<'GET' | 'HEAD'>('GET');
   const [headersInput, setHeadersInput] = useState('User-Agent: WebBugHunter-Audit/1.0\nAccept: text/html,application/json');
   const [loading, setLoading] = useState(false);

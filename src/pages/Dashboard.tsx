@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { DashboardMetrics, Scan, Finding } from '../types.ts';
 import { NavTab } from '../components/Sidebar.tsx';
+import { getSeverityStyle } from '../utils/severity.ts';
 
 interface DashboardProps {
   metrics: DashboardMetrics | null;
@@ -23,21 +24,17 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({
   metrics,
-  recentScans,
-  latestFindings,
+  recentScans = [],
+  latestFindings = [],
   onNavigate,
   onSelectScan,
   onSelectFinding,
 }) => {
-  const severityColors = {
-    critical: { text: 'text-red-400', bg: 'bg-red-500/10', border: 'border-red-500/20' },
-    high: { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
-    medium: { text: 'text-yellow-400', bg: 'bg-yellow-500/10', border: 'border-yellow-500/20' },
-    low: { text: 'text-cyan-400', bg: 'bg-cyan-500/10', border: 'border-cyan-500/20' },
-    informational: { text: 'text-slate-400', bg: 'bg-slate-500/10', border: 'border-slate-500/20' }
-  };
+  const safeScans = Array.isArray(recentScans) ? recentScans : [];
+  const safeFindings = Array.isArray(latestFindings) ? latestFindings : [];
+  const totalFindings = metrics?.totalFindings ?? safeFindings.length ?? 0;
 
-  const totalFindings = metrics?.totalFindings || 0;
+  const severityKeys = ['critical', 'high', 'medium', 'low', 'informational'] as const;
 
   return (
     <div className="space-y-6">
@@ -62,10 +59,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <Activity className="w-4 h-4 text-blue-400" />
           </div>
           <div className="text-2xl font-bold font-mono tabular-nums text-white">
-            {metrics?.totalScans ?? 0}
+            {metrics?.totalScans ?? safeScans.length ?? 0}
           </div>
           <div className="text-xs text-slate-500 mt-1">
-            {metrics?.completedScans ?? 0} completed successfully
+            {metrics?.completedScans ?? safeScans.filter(s => s.status === 'completed').length ?? 0} completed successfully
           </div>
         </div>
 
@@ -113,37 +110,37 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="h-3 w-full bg-slate-950 rounded overflow-hidden flex mb-4 border border-slate-800/80">
           {totalFindings > 0 ? (
             <>
-              {metrics?.severityCounts.critical ? (
+              {metrics?.severityCounts?.critical ? (
                 <div
-                  style={{ width: `${(metrics.severityCounts.critical / totalFindings) * 100}%` }}
+                  style={{ width: `${((metrics.severityCounts.critical || 0) / totalFindings) * 100}%` }}
                   className="bg-red-500 h-full"
                   title={`Critical: ${metrics.severityCounts.critical}`}
                 />
               ) : null}
-              {metrics?.severityCounts.high ? (
+              {metrics?.severityCounts?.high ? (
                 <div
-                  style={{ width: `${(metrics.severityCounts.high / totalFindings) * 100}%` }}
+                  style={{ width: `${((metrics.severityCounts.high || 0) / totalFindings) * 100}%` }}
                   className="bg-amber-500 h-full"
                   title={`High: ${metrics.severityCounts.high}`}
                 />
               ) : null}
-              {metrics?.severityCounts.medium ? (
+              {metrics?.severityCounts?.medium ? (
                 <div
-                  style={{ width: `${(metrics.severityCounts.medium / totalFindings) * 100}%` }}
+                  style={{ width: `${((metrics.severityCounts.medium || 0) / totalFindings) * 100}%` }}
                   className="bg-yellow-500 h-full"
                   title={`Medium: ${metrics.severityCounts.medium}`}
                 />
               ) : null}
-              {metrics?.severityCounts.low ? (
+              {metrics?.severityCounts?.low ? (
                 <div
-                  style={{ width: `${(metrics.severityCounts.low / totalFindings) * 100}%` }}
+                  style={{ width: `${((metrics.severityCounts.low || 0) / totalFindings) * 100}%` }}
                   className="bg-cyan-500 h-full"
                   title={`Low: ${metrics.severityCounts.low}`}
                 />
               ) : null}
-              {metrics?.severityCounts.informational ? (
+              {metrics?.severityCounts?.informational ? (
                 <div
-                  style={{ width: `${(metrics.severityCounts.informational / totalFindings) * 100}%` }}
+                  style={{ width: `${((metrics.severityCounts.informational || 0) / totalFindings) * 100}%` }}
                   className="bg-slate-500 h-full"
                   title={`Informational: ${metrics.severityCounts.informational}`}
                 />
@@ -158,9 +155,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Severity counters */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-          {(['critical', 'high', 'medium', 'low', 'informational'] as const).map((sev) => {
-            const count = metrics?.severityCounts[sev] || 0;
-            const style = severityColors[sev];
+          {severityKeys.map((sev) => {
+            const count = metrics?.severityCounts?.[sev] ?? safeFindings.filter(f => (f.severity || '').toLowerCase() === sev).length ?? 0;
+            const style = getSeverityStyle(sev);
             return (
               <div
                 key={sev}
@@ -193,29 +190,29 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </div>
 
-          {recentScans.length === 0 ? (
+          {safeScans.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-8 text-slate-500 text-xs">
               <Activity className="w-8 h-8 text-slate-700 mb-2" />
               <span>No scans executed yet. Add a target and click Start Scan.</span>
             </div>
           ) : (
             <div className="space-y-2.5 flex-1">
-              {recentScans.map((scan) => (
+              {safeScans.slice(0, 6).map((scan) => (
                 <div
-                  key={scan.id}
-                  onClick={() => onSelectScan(scan.id)}
+                  key={scan.id || Math.random().toString()}
+                  onClick={() => scan.id && onSelectScan(scan.id)}
                   className="p-3 rounded-md bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 cursor-pointer transition-colors flex items-center justify-between gap-3 text-xs"
                 >
                   <div className="min-w-0">
                     <div className="font-mono text-slate-200 truncate font-medium">
-                      {scan.target_hostname}
+                      {scan.target_hostname || 'Target'}
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
-                      <span>{new Date(scan.started_at).toLocaleTimeString()}</span>
+                      <span>{scan.started_at ? new Date(scan.started_at).toLocaleTimeString() : 'Recent'}</span>
                       <span>·</span>
-                      <span>{scan.checks_run}/10 checks</span>
+                      <span>{scan.checks_run ?? 0}/10 checks</span>
                       <span>·</span>
-                      <span className="text-amber-400 font-mono">{scan.findings_count} findings</span>
+                      <span className="text-amber-400 font-mono">{scan.findings_count ?? 0} findings</span>
                     </div>
                   </div>
 
@@ -231,7 +228,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                           : 'bg-red-500/10 text-red-400'
                       }`}
                     >
-                      {scan.status}
+                      {scan.status || 'pending'}
                     </span>
                   </div>
                 </div>
@@ -253,35 +250,35 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </div>
 
-          {latestFindings.length === 0 ? (
+          {safeFindings.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center py-8 text-slate-500 text-xs">
               <Bug className="w-8 h-8 text-slate-700 mb-2" />
               <span>No findings discovered yet.</span>
             </div>
           ) : (
             <div className="space-y-2.5 flex-1">
-              {latestFindings.map((finding) => {
-                const style = severityColors[finding.severity];
+              {safeFindings.slice(0, 6).map((finding) => {
+                const style = getSeverityStyle(finding?.severity);
                 return (
                   <div
-                    key={finding.id}
+                    key={finding.id || Math.random().toString()}
                     onClick={() => onSelectFinding(finding)}
                     className="p-3 rounded-md bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 cursor-pointer transition-colors flex items-center justify-between gap-3 text-xs"
                   >
                     <div className="min-w-0">
                       <div className="text-slate-200 font-medium truncate">
-                        {finding.title}
+                        {finding.title || 'Untitled Finding'}
                       </div>
                       <div className="text-[11px] text-slate-500 mt-0.5 truncate flex items-center gap-2">
-                        <span>{finding.category}</span>
+                        <span>{finding.category || 'Security'}</span>
                         <span>·</span>
-                        <span className="font-mono text-slate-400">{finding.verification_status}</span>
+                        <span className="font-mono text-slate-400">{finding.verification_status || 'New'}</span>
                       </div>
                     </div>
 
                     <div className="shrink-0">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider ${style.bg} ${style.text} border ${style.border}`}>
-                        {finding.severity}
+                        {finding.severity || 'info'}
                       </span>
                     </div>
                   </div>

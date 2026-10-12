@@ -117,7 +117,7 @@ export const Targets: React.FC<TargetsProps> = ({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {targets.map((target) => (
+                {(Array.isArray(targets) ? targets : []).map((target) => (
                   <tr key={target.id} className="hover:bg-slate-850/40 transition-colors">
                     <td className="py-3 px-4">
                       <div className="font-mono font-medium text-slate-200">
@@ -136,7 +136,7 @@ export const Targets: React.FC<TargetsProps> = ({
                       <div className="text-slate-300">
                         {target.allow_subdomains ? 'Host + Subdomains (*)' : 'Exact Host Only'}
                       </div>
-                      {target.excluded_hosts?.length > 0 && (
+                      {Array.isArray(target.excluded_hosts) && target.excluded_hosts.length > 0 && (
                         <div className="text-[11px] text-red-400/80 font-mono mt-0.5">
                           {target.excluded_hosts.length} exclusions
                         </div>

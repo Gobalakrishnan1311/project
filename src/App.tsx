@@ -48,12 +48,12 @@ export default function App() {
         api.getFindings().catch(() => [])
       ]);
 
-      if (dashData) {
+      if (dashData && dashData.metrics) {
         setMetrics(dashData.metrics);
       }
-      setTargets(targetList);
-      setScans(scanList);
-      setFindings(findingList);
+      setTargets(Array.isArray(targetList) ? targetList : []);
+      setScans(Array.isArray(scanList) ? scanList : []);
+      setFindings(Array.isArray(findingList) ? findingList : []);
     } catch (err) {
       console.error('Failed to load initial data:', err);
     }
